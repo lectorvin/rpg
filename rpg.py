@@ -350,66 +350,66 @@ def generate():
     entities = pygame.sprite.Group()
     platforms = []
     x = y = 0
-    with open('levels\level' + str(level) + '.txt') as f:
     """ open file with next or previous level, initial all object;
     add them in entities; objects, that will be on map whole of
     game, will be pushed in platforms to check if hero collide them"""
-    for row in f:
-        for col in row:
-            if col == '&': # sword
-                pf = Real_Object(x, y, 'img/sword1.png', 'sword')
-                entities.add(pf)
-            elif col == 'P': # npc
-                pf = NPC(x, y, 'img/npc/npc' + str(level) + '.png')
-                entities.add(pf)
-                platforms.append(pf)
-            elif col == 'S': # bed
-                pf = Bed(x, y, 'img/bed.png')
-                entities.add(pf)
-                platforms.append(pf)
-            elif col == '%': # life
-                pf = LifeBlock(x+10, y+10, 'img/life.png')
-                entities.add(pf)
-            elif col == '-': # tree
-                pf=Platform(x, y, 'img/tree.png')
-                platforms.append(pf)
-                entities.add(pf)
-            elif col == '/':  # levelUp, door to next level
-                pf = PlatExit(x, y, 'img/exit.png')
-                platforms.append(pf)
-                entities.add(pf)
-                if LevDown:
-                # if we return from previous level,
-                # we spawn near door to next level
-                    generateHero(x,y)
-            elif col == '!':  #levelDown, door to previous level
-                # on first level there isn't door on previous
-                # level so we need add 2 trees instead of it
-                if level != 1:
-                    pf = PlatLevelDown(x, y, 'img/exit.png')
+    with open('levels\level' + str(level) + '.txt') as f:
+        for row in f:
+            for col in row:
+                if col == '&': # sword
+                    pf = Real_Object(x, y, 'img/sword1.png', 'sword')
+                    entities.add(pf)
+                elif col == 'P': # npc
+                    pf = NPC(x, y, 'img/npc/npc' + str(level) + '.png')
+                    entities.add(pf)
+                    platforms.append(pf)
+                elif col == 'S': # bed
+                    pf = Bed(x, y, 'img/bed.png')
+                    entities.add(pf)
+                    platforms.append(pf)
+                elif col == '%': # life
+                    pf = LifeBlock(x+10, y+10, 'img/life.png')
+                    entities.add(pf)
+                elif col == '-': # tree
+                    pf=Platform(x, y, 'img/tree.png')
                     platforms.append(pf)
                     entities.add(pf)
-                else:
-                    pf = Platform(x, y, 'img/tree.png')
+                elif col == '/':  # levelUp, door to next level
+                    pf = PlatExit(x, y, 'img/exit.png')
                     platforms.append(pf)
                     entities.add(pf)
-                    pf = Platform(x, y+50, 'img/tree.png')
+                    if LevDown:
+                    # if we return from previous level,
+                    # we spawn near door to next level
+                        generateHero(x,y)
+                elif col == '!':  #levelDown, door to previous level
+                    # on first level there isn't door on previous
+                    # level so we need add 2 trees instead of it
+                    if level != 1:
+                        pf = PlatLevelDown(x, y, 'img/exit.png')
+                        platforms.append(pf)
+                        entities.add(pf)
+                    else:
+                        pf = Platform(x, y, 'img/tree.png')
+                        platforms.append(pf)
+                        entities.add(pf)
+                        pf = Platform(x, y+50, 'img/tree.png')
+                        platforms.append(pf)
+                        entities.add(pf)
+                    if LevUp:
+                        # if we goint to next level,
+                        # we spawn near door to previous level
+                        generateHero(x, y)
+                elif col == 'D':  # walls of house
+                    pf = Wall(x, y, 'img/wall.png')
                     platforms.append(pf)
                     entities.add(pf)
-                if LevUp:
-                    # if we goint to next level,
-                    # we spawn near door to previous level
-                    generateHero(x, y)
-            elif col == 'D':  # walls of house
-                pf = Wall(x, y, 'img/wall.png')
-                platforms.append(pf)
-                entities.add(pf)
-            elif col == '*': # mobs
-                pf = Monster(x, y, 'img/monster.png')
-                monsters.add(pf)
-            x += PlatWidth
-        y += PlatHeight
-        x = 0
+                elif col == '*': # mobs
+                    pf = Monster(x, y, 'img/monster.png')
+                    monsters.add(pf)
+                x += PlatWidth
+            y += PlatHeight
+            x = 0
 
     camera = Camera(camera_configure, len(row) * PlatWidth, y)
 
