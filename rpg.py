@@ -1,4 +1,3 @@
-import tkinter
 import pygame
 import pyganim
 
@@ -6,22 +5,22 @@ from pygame import *
 from pyganim import *
 
 pygame.init()
-running = level = 1
-width = 95
-height = 100
-ScreenWidth = 900
-ScreenHeight = 600
-screen = pygame.display.set_mode((ScreenWidth, ScreenHeight))
-background = (239, 228, 176)
-PlatWidth = PlatHeight = 50
+RUNNING = LEVEL = 1
+WIDTH = 95
+HEIGHT = 100
+SCREENWIDTH = 900
+SCREENHEIGHT = 600
+screen = pygame.display.set_mode((SCREENWIDTH, SCREENHEIGHT))
+BACKGROUND = (239, 228, 176)
+PLATWIDTH = PLATHEIGHT = 50
 inventary = []
-LevUp = False
-LevDown = False
-life = 20
-money = 0
+LEVUP = False
+LEVDOWN = False
+LIFE = 20
+MONEY = 0
 
 
-def Say(title, path):
+def say(title, path):
     """if you want to say something to user, like advice from npc;
     path - path of image with text, title - title of window"""
     root = tkinter.Tk()
@@ -33,7 +32,7 @@ def Say(title, path):
     root.mainloop()
 
 
-def CollideTheWall(smbd, wall, xvel, yvel):
+def collide_the_wall(smbd, wall, xvel, yvel):
     """function for check, if smbd collide the wall(or other object);
     xvel, yvel = direction of moving"""
     if xvel > 0:
@@ -58,7 +57,7 @@ def CollideTheWall(smbd, wall, xvel, yvel):
             smbd.yvel = 0
 
 
-def SmthInInventary(type2):
+def smth_in_inventary(type2):
     """check if some object is in inventary"""
     r = False
     for i in inventary:
@@ -71,45 +70,81 @@ class SolidObject(sprite.Sprite):
     """parent class for all fixed objects"""
     def __init__(self, x, y, path):
         sprite.Sprite.__init__(self)
-        self.rect = pygame.rect.Rect(x, y, PlatWidth, PlatHeight)
+        self.rect = pygame.rect.Rect(x, y, PLATWIDTH, PLATHEIGHT)
         self.image = pygame.image.load(path)
 
-
-"""all fixed objects"""
-class LifeBlock(SolidObject):
-    pass
+    def action(self):
+        pass
 
 
-class Platform(SolidObject):
-    pass
-
-
-class Coin(SolidObject):
-    pass
-
-
+"""all fixed objects. begin"""
 class Wall(SolidObject):
     pass
 
 
-class Bed(SolidObject):
+class Tree(SolidObject):
     pass
+
+
+class LifeBlock(SolidObject):
+    def action(self):
+        if LIFE < 20:
+            LIFE += 1
+            self.kill()
+
+
+class Coin(SolidObject):
+    def action(self):
+        global MONEY
+        MONEY += 1
+        self.kill()
+
+
+class Bed(SolidObject):
+    def action(self):
+        global LIFE, sleep
+        if sleep:
+            print('sleep...')
+            pygame.time.delay(200)
+            imga = pygame.image.load('img/sleep.png')
+            imgarect = imga.get_rect()
+            screen.blit(imga, imgarect)
+            pygame.display.flip()
+            pygame.time.delay(4000)
+            LIFE = 20
+            sleep = False
 
 
 class PlatExit(SolidObject):
-    pass
+    def action(self):
+        if smth_in_inventary('sword'):
+            global LEVUP, LEVEL
+            pygame.time.delay(300)
+            LEVUP = True
+            LEVEL += 1
+        else:
+            say('Dangerous', 'img/text/dangerous.gif')
 
 
 class PlatLevelDown(SolidObject):
-    pass
+    def action(self):
+        global LEVDOWN, LEVEL
+        LEVEL -= 1
+        LEVDOWN = True
 
 
 class NPC(SolidObject):
-    pass
+    def action(self):
+        global talk
+        if talk:
+            global LEVEL
+            say('advice', 'img/text/text' + str(LEVEL) + '.gif')
+            talk = False
+"""solid objects. end"""
 
 
 class Monster(sprite.Sprite):
-    """very peaceful monster, just running. attack, only if was attacked"""
+    """very peaceful monster, just RUNNING. attack, only if was attacked"""
     def __init__(self, x, y, path):
         sprite.Sprite.__init__(self)
         self.StartX = x
@@ -120,11 +155,11 @@ class Monster(sprite.Sprite):
         self.xvel = 0
         self.yvel = -2
         self.image = pygame.image.load(path)
-        self.rect = pygame.rect.Rect(x, y, PlatWidth, PlatHeight)
+        self.rect = pygame.rect.Rect(x, y, PLATWIDTH, PLATHEIGHT)
 
-    def move(self, entities):
-        global life
-        for f in entities:
+    def move(self, ENTITIES):
+        global LIFE
+        for f in ENTITIES:
             if ((sprite.collide_rect(self, f))
                 and isinstance(f, Player) and attack):
                 if attack:
@@ -132,48 +167,54 @@ class Monster(sprite.Sprite):
                     pygame.time.delay(50)
                     self.xvel = 0
                     self.yvel = 0
-                    life -= self.power
-        self.collide(self.xvel, 0, entities)
+                    LIFE -= self.power
+        self.collide(self.xvel, 0, ENTITIES)
         self.rect.x += self.xvel
-        self.collide(0, self.yvel, entities)
+        self.collide(0, self.yvel, ENTITIES)
         self.rect.y += self.yvel
 
-    def collide(self, xvel, yvel, entities):
-        for f in entities:
+    def collide(self, xvel, yvel, ENTITIES):
+        for f in ENTITIES:
             if (sprite.collide_rect(self, f)) and not(isinstance(f, Player))\
                                             and not(isinstance(f, LifeBlock)):
-                CollideTheWall(self, f, xvel, yvel)
+                collide_the_wall(self, f, xvel, yvel)
 
 
-class Real_Object(sprite.Sprite):  #
-    """things, that will be in hero's inventarory"""
+class RealObject(sprite.Sprite):
+    """things, that will be in hero's inventary"""
     def __init__(self, x, y, path, type1):
         sprite.Sprite.__init__(self)
         self.type1 = type1
         self.image = pygame.image.load(path)
-        self.rect = pygame.rect.Rect(x, y, PlatWidth, PlatHeight)
+        self.rect = pygame.rect.Rect(x, y, PLATWIDTH, PLATHEIGHT)
+
+    def invent_append(self, type1):
+        if not(smth_in_inventary(type1)):
+            print(self)
+            inventary.append(self)
+            self.kill()
 
 
-class Camera(object):
-    def __init__(self, camera_func, width, height):
-        self.camera_func = camera_func
+class CAMERA(object):
+    def __init__(self, CAMERA_func, width, height):
+        self.CAMERA_func = CAMERA_func
         self.state = Rect(0, 0, width, height)
 
     def apply(self, target):
         return target.rect.move(self.state.topleft)
 
     def update(self,target):
-        self.state = self.camera_func(self.state, target.rect)
+        self.state = self.CAMERA_func(self.state, target.rect)
 
 
-def camera_configure(camera, target_rect):
+def CAMERA_configure(CAMERA, target_rect):
     left, t, _, _ = target_rect
-    _, _, w, h = camera
-    left, t = -left + ScreenWidth / 2, -t + ScreenHeight/2
+    _, _, w, h = CAMERA
+    left, t = -left + SCREENWIDTH / 2, -t + SCREENHEIGHT/2
     left = min(0, left)
-    left = max(-(camera.width - ScreenWidth), left)
+    left = max(-(CAMERA.width - SCREENWIDTH), left)
     t = min(0, t)
-    t = max(-(camera.height - ScreenHeight), t)
+    t = max(-(CAMERA.height - SCREENHEIGHT), t)
     return Rect(left, t, w, h)
 
 
@@ -201,9 +242,9 @@ class Player(sprite.Sprite):
         selfStartX = x
         selfStartY = y
         self.power = power
-        self.image = Surface((width, height))
-        self.rect = pygame.rect.Rect(x, y, width, height)
-        self.image.set_colorkey(background)
+        self.image = Surface((WIDTH, HEIGHT))
+        self.rect = pygame.rect.Rect(x, y, WIDTH, HEIGHT)
+        self.image.set_colorkey(BACKGROUND)
 
         #define animation of player; use pyganim
         boltAnim = []
@@ -228,18 +269,18 @@ class Player(sprite.Sprite):
             boltAnim.append((anim,Animation_Delay))
         self.boltAnimLeft = pyganim.PygAnimation(boltAnim)
         self.boltAnimLeft.play()
-        self.image.fill(background)
+        self.image.fill(BACKGROUND)
 
         boltAnim = []
         for anim in Animation_Attack:
             boltAnim.append((anim,Animation_Delay * 5))
         self.boltAnimAttack = pyganim.PygAnimation(boltAnim)
         self.boltAnimAttack.play()
-        self.image.fill(background)
+        self.image.fill(BACKGROUND)
 
-    def update(self, left, right, up, down, platforms):
-        self.image.fill(background)
-        for m in monsters:
+    def update(self, left, right, up, down, PLATFORMS):
+        self.image.fill(BACKGROUND)
+        for m in MONSTERS:
             if sprite.collide_rect(self, m) and attack:
                 print('Player hits monster: ', self.power)
                 m.life -= self.power
@@ -247,7 +288,7 @@ class Player(sprite.Sprite):
                 if m.life < 1:
                     m.kill()
                     pf = Coin(m.rect.x-15, m.rect.y-15, 'img/coin.png')
-                    entities.add(pf)
+                    ENTITIES.add(pf)
 
         if left:
             self.xvel = -self.speed
@@ -265,66 +306,31 @@ class Player(sprite.Sprite):
             self.xvel = 0
             self.boltAnimAttack.blit(self.image, (0, 0))
         if not(left or right or up or down or attack):
-            self.xvel=0
-            self.yvel=0
+            self.xvel = 0
+            self.yvel = 0
             self.boltAnimStay.blit(self.image, (0, 0))
 
         self.rect.x += self.xvel
-        self.collide(self.xvel, 0, platforms)
+        self.collide(self.xvel, 0, PLATFORMS)
         self.rect.y += self.yvel
-        self.collide(0, self.yvel, platforms)
+        self.collide(0, self.yvel, PLATFORMS)
 
-    def collide(self, xvel, yvel, platforms):
-        for e in entities:
+    def collide(self, xvel, yvel, PLATFORMS):
+        for e in ENTITIES:
             if sprite.collide_rect(self, e):
-                if isinstance(e, PlatExit):
-                    if SmthInInventary('sword'):
-                        global LevUp
-                        pygame.time.delay(300)
-                        LevUp = True
-                        level += 1
-                    else:
-                        Say('Dangerous', 'img/text/dangerous.gif')
-                elif isinstance(e, PlatLevelDown):
-                    global LevDown
-                    level -= 1
-                    LevDown = True
-                elif isinstance(e, Bed):
-                    global life, sleep
-                    if sleep:
-                        print('sleep...')
-                        pygame.time.delay(200)
-                        imga = pygame.image.load('img/sleep.png')
-                        imgarect = imga.get_rect()
-                        screen.blit(imga, imgarect)
-                        pygame.display.flip()
-                        pygame.time.delay(4000)
-                        life = 20
-                        sleep = False
-                elif isinstance(e, LifeBlock):
-                    if life < 20:
-                        life += 1
-                        e.kill()
-                elif isinstance(e, Real_Object):
-                    if not(SmthInInventary('sword')):
-                        inventary.append(e)
-                        e.kill()
-                elif isinstance(e, Coin):
-                    global money
-                    money += 1
-                    e.kill()
-                elif isinstance(e, NPC) and talk:
-                    global level
-                    Say('advice', 'img/text/text' + str(level) + '.gif')
-                    talk = False
+                """special collides, not tree and wall"""
+                if isinstance(e, SolidObject):
+                    e.action()
+                elif isinstance(e, RealObject):
+                    e.invent_append(e.type1)
                 if not(isinstance(e, Player)):
-                    CollideTheWall(self, e, xvel,yvel)
+                    collide_the_wall(self, e, xvel,yvel)
 
 
 def generateHero(x, y):
-    """this function generate hero near door to previous or next level
-    door to previous level has x == 0
-    door to next level has x == SreenWidth
+    """this function generate hero near door to previous or next LEVEL
+    door to previous LEVEL has x == 0
+    door to next LEVEL has x == SreenWidth
     if y is too big (bigger than 300) hero can spawn on tree"""
     global hero
     if x == 0:
@@ -337,100 +343,100 @@ def generateHero(x, y):
     else:
         y1 = y + 10
 
-    if SmthInInventary('sword'):
+    if smth_in_inventary('sword'):
         hero = Player(x1, y1, 4)
     else:
         hero = Player(x1, y1, 2)
-    entities.add(hero)
+    ENTITIES.add(hero)
 
 
 def generate():
-    global monsters, entities, platforms, camera
-    monsters = pygame.sprite.Group()
-    entities = pygame.sprite.Group()
-    platforms = []
+    global MONSTERS, ENTITIES, PLATFORMS, CAMERA
+    MONSTERS = pygame.sprite.Group()
+    ENTITIES = pygame.sprite.Group()
+    PLATFORMS = []
     x = y = 0
-    """ open file with next or previous level, initial all object;
-    add them in entities; objects, that will be on map whole of
-    game, will be pushed in platforms to check if hero collide them"""
-    with open('levels\level' + str(level) + '.txt') as f:
+    """ open file with next or previous LEVEL, initial all object;
+    add them in ENTITIES; objects, that will be on map whole of
+    game, will be pushed in PLATFORMS to check if hero collide them"""
+    with open('levels\level' + str(LEVEL) + '.txt') as f:
         for row in f:
             for col in row:
                 if col == '&': # sword
-                    pf = Real_Object(x, y, 'img/sword1.png', 'sword')
-                    entities.add(pf)
+                    pf = RealObject(x, y, 'img/sword1.png', 'sword')
+                    ENTITIES.add(pf)
                 elif col == 'P': # npc
-                    pf = NPC(x, y, 'img/npc/npc' + str(level) + '.png')
-                    entities.add(pf)
-                    platforms.append(pf)
+                    pf = NPC(x, y, 'img/npc/npc' + str(LEVEL) + '.png')
+                    ENTITIES.add(pf)
+                    PLATFORMS.append(pf)
                 elif col == 'S': # bed
                     pf = Bed(x, y, 'img/bed.png')
-                    entities.add(pf)
-                    platforms.append(pf)
+                    ENTITIES.add(pf)
+                    PLATFORMS.append(pf)
                 elif col == '%': # life
                     pf = LifeBlock(x+10, y+10, 'img/life.png')
-                    entities.add(pf)
+                    ENTITIES.add(pf)
                 elif col == '-': # tree
-                    pf=Platform(x, y, 'img/tree.png')
-                    platforms.append(pf)
-                    entities.add(pf)
-                elif col == '/':  # levelUp, door to next level
+                    pf = Tree(x, y, 'img/tree.png')
+                    PLATFORMS.append(pf)
+                    ENTITIES.add(pf)
+                elif col == '/':  # levelUp, door to next LEVEL
                     pf = PlatExit(x, y, 'img/exit.png')
-                    platforms.append(pf)
-                    entities.add(pf)
-                    if LevDown:
-                    # if we return from previous level,
-                    # we spawn near door to next level
+                    PLATFORMS.append(pf)
+                    ENTITIES.add(pf)
+                    if LEVDOWN:
+                    # if we return from previous LEVEL,
+                    # we spawn near door to next LEVEL
                         generateHero(x,y)
-                elif col == '!':  #levelDown, door to previous level
-                    # on first level there isn't door on previous
-                    # level so we need add 2 trees instead of it
-                    if level != 1:
+                elif col == '!':  #levelDown, door to previous LEVEL
+                    # on first LEVEL there isn't door on previous
+                    # LEVEL so we need add 2 trees instead of it
+                    if LEVEL != 1:
                         pf = PlatLevelDown(x, y, 'img/exit.png')
-                        platforms.append(pf)
-                        entities.add(pf)
+                        PLATFORMS.append(pf)
+                        ENTITIES.add(pf)
                     else:
-                        pf = Platform(x, y, 'img/tree.png')
-                        platforms.append(pf)
-                        entities.add(pf)
-                        pf = Platform(x, y+50, 'img/tree.png')
-                        platforms.append(pf)
-                        entities.add(pf)
-                    if LevUp:
-                        # if we goint to next level,
-                        # we spawn near door to previous level
+                        pf = Tree(x, y, 'img/tree.png')
+                        PLATFORMS.append(pf)
+                        ENTITIES.add(pf)
+                        pf = Tree(x, y+50, 'img/tree.png')
+                        PLATFORMS.append(pf)
+                        ENTITIES.add(pf)
+                    if LEVUP:
+                        # if we goint to next LEVEL,
+                        # we spawn near door to previous LEVEL
                         generateHero(x, y)
                 elif col == 'D':  # walls of house
                     pf = Wall(x, y, 'img/wall.png')
-                    platforms.append(pf)
-                    entities.add(pf)
+                    PLATFORMS.append(pf)
+                    ENTITIES.add(pf)
                 elif col == '*': # mobs
                     pf = Monster(x, y, 'img/monster.png')
-                    monsters.add(pf)
-                x += PlatWidth
-            y += PlatHeight
+                    MONSTERS.add(pf)
+                x += PLATWIDTH
+            y += PLATHEIGHT
             x = 0
 
-    camera = Camera(camera_configure, len(row) * PlatWidth, y)
+    CAMERA = CAMERA(CAMERA_configure, len(row) * PLATWIDTH, y)
 
 
-LevUp = True
+LEVUP = True
 generate()
-LevUp = False
+LEVUP = False
 timer = pygame.time.Clock()
 left = right = up = down = attack = sleep = talk = False
-Say('advice', 'img/text/text0.gif')
+say('advice', 'img/text/text0.gif')
 
-while running:
+while RUNNING:
 # right now, while window isn't closed
-    if LevUp or LevDown:
+    if LEVUP or LEVDOWN:
         generate()
-        LevUp = LevDown = False
+        LEVUP = LEVDOWN = False
         print('------------------')
-    for m in monsters:
-        m.move(entities)
+    for m in MONSTERS:
+        m.move(ENTITIES)
     if Animation_Down[1] != 'img/swordHero/heroW3.png':
-        if SmthInInventary('sword'):
+        if smth_in_inventary('sword'):
             Animation_Down = [('img/swordHero/heroW2.png'),
                               ('img/swordHero/heroW3.png')]
             Animation_Stay = [('img/swordHero/heroW1.png',0.1)]
@@ -445,19 +451,19 @@ while running:
             hero.__init__(hero.rect.x, hero.rect.y, 4)
 
     timer.tick(60)
-    screen.fill(background)
-    camera.update(hero)
-    hero.update(left, right, up, down, platforms)
-    for e in entities:
-        screen.blit(e.image, camera.apply(e))
-    for m in monsters:
-        screen.blit(m.image, camera.apply(m))
-    pygame.display.set_caption('Level ' + str(level) +\
-                            ' life ' + str(life) + ' money ' + str(money))
+    screen.fill(BACKGROUND)
+    CAMERA.update(hero)
+    hero.update(left, right, up, down, PLATFORMS)
+    for e in ENTITIES:
+        screen.blit(e.image, CAMERA.apply(e))
+    for m in MONSTERS:
+        screen.blit(m.image, CAMERA.apply(m))
+    pygame.display.set_caption('Level ' + str(LEVEL) +\
+                            ' life ' + str(LIFE) + ' money ' + str(MONEY))
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            running = False
+            RUNNING = False
         if not(up or down or right or left or attack):
             if event.type == KEYDOWN:
                 if event.key == K_UP:
@@ -475,7 +481,7 @@ while running:
                 elif event.key == K_t:
                     talk = True
                 elif event.key == K_F1:
-                    Say('Pause', 'img/text/pause.gif')
+                    say('Pause', 'img/text/pause.gif')
 
         if event.type == KEYUP:
             if event.key == K_UP:
