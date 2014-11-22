@@ -1,5 +1,9 @@
+import tkinter
+
 import pygame
 import pyganim
+
+import camera
 
 from pygame import *
 from pyganim import *
@@ -11,7 +15,7 @@ HEIGHT = 100
 SCREENWIDTH = 900
 SCREENHEIGHT = 600
 screen = pygame.display.set_mode((SCREENWIDTH, SCREENHEIGHT))
-BACKGROUND = (239, 228, 176)
+BACKGROUND = ((250,250,250)) # don't ask me why
 PLATWIDTH = PLATHEIGHT = 50
 inventary = []
 LEVUP = False
@@ -34,7 +38,7 @@ def say(title, path):
 
 def collide_the_wall(smbd, wall, xvel, yvel):
     """function for check, if smbd collide the wall(or other object);
-    xvel, yvel = direction of moving"""
+    xvel, yvel - direction of moving"""
     if xvel > 0:
         smbd.rect.right = wall.rect.left
         if isinstance(smbd, Monster):
@@ -88,6 +92,7 @@ class Tree(SolidObject):
 
 class LifeBlock(SolidObject):
     def action(self):
+        global LIFE
         if LIFE < 20:
             LIFE += 1
             self.kill()
@@ -106,7 +111,7 @@ class Bed(SolidObject):
         if sleep:
             print('sleep...')
             pygame.time.delay(200)
-            imga = pygame.image.load('img/sleep.png')
+            imga = pygame.image.load('img/text/sleep.png')
             imgarect = imga.get_rect()
             screen.blit(imga, imgarect)
             pygame.display.flip()
@@ -190,32 +195,9 @@ class RealObject(sprite.Sprite):
 
     def invent_append(self, type1):
         if not(smth_in_inventary(type1)):
-            print(self)
             inventary.append(self)
             self.kill()
 
-
-class CAMERA(object):
-    def __init__(self, CAMERA_func, width, height):
-        self.CAMERA_func = CAMERA_func
-        self.state = Rect(0, 0, width, height)
-
-    def apply(self, target):
-        return target.rect.move(self.state.topleft)
-
-    def update(self,target):
-        self.state = self.CAMERA_func(self.state, target.rect)
-
-
-def CAMERA_configure(CAMERA, target_rect):
-    left, t, _, _ = target_rect
-    _, _, w, h = CAMERA
-    left, t = -left + SCREENWIDTH / 2, -t + SCREENHEIGHT/2
-    left = min(0, left)
-    left = max(-(CAMERA.width - SCREENWIDTH), left)
-    t = min(0, t)
-    t = max(-(CAMERA.height - SCREENHEIGHT), t)
-    return Rect(left, t, w, h)
 
 
 #define pictures of hero
@@ -351,7 +333,7 @@ def generateHero(x, y):
 
 
 def generate():
-    global MONSTERS, ENTITIES, PLATFORMS, CAMERA
+    global MONSTERS, ENTITIES, PLATFORMS, CAMERA, BACKIMG
     MONSTERS = pygame.sprite.Group()
     ENTITIES = pygame.sprite.Group()
     PLATFORMS = []
@@ -417,8 +399,10 @@ def generate():
             y += PLATHEIGHT
             x = 0
 
-    CAMERA = CAMERA(CAMERA_configure, len(row) * PLATWIDTH, y)
-
+    CAMERA = camera.Camera(camera.CAMERA_configure, len(row) * PLATWIDTH, y)
+    pathimg = "img/background/img"+str(LEVEL)+".png"
+    BACKIMG = pygame.image.load(pathimg).convert()
+    BACKIMG_rect = BACKIMG.get_rect()
 
 LEVUP = True
 generate()
@@ -433,6 +417,10 @@ while RUNNING:
         generate()
         LEVUP = LEVDOWN = False
         print('------------------')
+    if not(LIFE):
+        say('Dead','img/text/dead.gif')
+        LEVEL = 2
+        generate()
     for m in MONSTERS:
         m.move(ENTITIES)
     if Animation_Down[1] != 'img/swordHero/heroW3.png':
@@ -451,8 +439,8 @@ while RUNNING:
             hero.__init__(hero.rect.x, hero.rect.y, 4)
 
     timer.tick(60)
-    screen.fill(BACKGROUND)
     CAMERA.update(hero)
+    screen.blit(BACKIMG, CAMERA.apply((0,0)))
     hero.update(left, right, up, down, PLATFORMS)
     for e in ENTITIES:
         screen.blit(e.image, CAMERA.apply(e))
