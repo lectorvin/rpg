@@ -1,3 +1,28 @@
+# ! - do in right now; P - programming; L - logic
+#P TODO: module solid object, monsters, hero etc
+#P TODO: like tkinter.Tk() but without interruption
+#! TODO: hero's level, XP, hero's name
+#! TODO: basic attributes (strength, fallout system?) and make them better (strength-ups)
+#! TODO: quests!!!!11!1
+#! TODO: door with key, npc sell key; puzzles; button whick opens door(?)
+#  TODO: dragon-boss
+#  TODO: graphics like Starcraft
+#  TODO: not only sword
+#  TODO: different classes
+#L TODO: not only peaceful mobs
+#PL FIXED: battles like normal battles
+#L TODO: random mobs' bites; random hit...
+#L TODO: good dialogs with npc, make your choice
+#P TODO: new program for generating pixel text
+#  TODO: mobs spawner
+#  TODO: use tactics
+#! TODO: make you character by yourself; fallout system?
+#  TODO: levels not in line (bonus levels?); make your choice
+#  TODO: more things in inventary
+#  TODO: chest with...
+#  TODO: traps, poison...
+#  TODO: moar information
+#  TODO: make wiki choice: narrative RPG or Dungeon crawler; mass effect of diablo
 import tkinter
 
 import pygame
@@ -98,8 +123,8 @@ class Coin(SolidObject):
 
 class Bed(SolidObject):
     def action(self):
-        global life, sleep
-        if sleep:
+        global life, doing
+        if doing:
             print('sleep...')
             pygame.time.delay(200)
             imga = pygame.image.load('img/text/sleep.png')
@@ -108,7 +133,7 @@ class Bed(SolidObject):
             pygame.display.flip()
             pygame.time.delay(4000)
             life = 20
-            sleep = False
+            doing = False
 
 
 class PlatExit(SolidObject):
@@ -131,11 +156,11 @@ class PlatLevelDown(SolidObject):
 
 class NPC(SolidObject):
     def action(self):
-        global talk
-        if talk:
+        global doing
+        if doing:
             global level
             say('advice', 'img/text/text' + str(level) + '.gif')
-            talk = False
+            doing = False
 """solid objects. end"""
 
 
@@ -147,7 +172,7 @@ class Monster(sprite.Sprite):
         self.StartY = y
         self.speed = 3
         self.life = 6
-        self.power = 1
+        self.strength = 1
         self.xvel = 0
         self.yvel = -2
         self.image = pygame.image.load(path)
@@ -159,11 +184,11 @@ class Monster(sprite.Sprite):
             if ((sprite.collide_rect(self, f))
                 and isinstance(f, Player) and attack):
                 if attack:
-                    print('Monster hits player: ', self.power)
+                    print('Monster hits player: ', self.strength)
                     pygame.time.delay(50)
                     self.xvel = 0
                     self.yvel = 0
-                    life -= self.power
+                    life -= self.strength
         self.collide(self.xvel, 0, entities)
         self.rect.x += self.xvel
         self.collide(0, self.yvel, entities)
@@ -188,35 +213,53 @@ class RealObject(sprite.Sprite):
         if not(smth_in_inventary(type1)):
             inventary.append(self)
             self.kill()
-
-
-#define pictures of hero
-Animation_Delay = 0.1
-Animation_Attack = [('img/startHero/heroW1.png'),
-                    ('img/startHero/heroAtt.png')]
-Animation_Down = [('img/startHero/heroW2.png'),
-                  ('img/startHero/heroW3.png')]
-Animation_Stay = [('img/startHero/heroW1.png', Animation_Delay)]
-Animation_Right = [('img/startHero/heroR1.png'),
-                   ('img/startHero/heroR2.png'),
-                   ('img/startHero/heroR3.png')]
-Animation_Left = [('img/startHero/heroL1.png'),
-                   ('img/startHero/heroL2.png'),
-                   ('img/startHero/heroL3.png')]
+            global hero
+            hero.strength += 2
+            hero.anim()
 
 
 class Player(sprite.Sprite):
-    def __init__(self, x, y, power):
+    def __init__(self, x, y, strength):
         sprite.Sprite.__init__(self)
         self.xvel = 0
         self.yvel = 0
         self.speed = 4
         selfStartX = x
         selfStartY = y
-        self.power = power
+        self.strength = strength
+        self.agility = 10
+        self.luck = 6
+        self.intelligence = 5
         self.image = Surface((WIDTH, HEIGHT))
         self.rect = pygame.rect.Rect(x, y, WIDTH, HEIGHT)
         self.image.set_colorkey(BACKGROUND)
+
+    def anim(self):
+        Animation_Delay = 0.1
+        if not(smth_in_inventary('sword')):
+            Animation_Down = [('img/startHero/heroW2.png'),
+                              ('img/startHero/heroW3.png')]
+            Animation_Stay = [('img/startHero/heroW1.png', Animation_Delay)]
+            Animation_Right = [('img/startHero/heroR1.png'),
+                               ('img/startHero/heroR2.png'),
+                               ('img/startHero/heroR3.png')]
+            Animation_Left = [('img/startHero/heroL1.png'),
+                               ('img/startHero/heroL2.png'),
+                               ('img/startHero/heroL3.png')]
+            Animation_Attack = [('img/startHero/heroW1.png'),
+                                ('img/startHero/heroAtt.png')]
+        else:
+            Animation_Down = [('img/swordHero/heroW2.png'),
+                              ('img/swordHero/heroW3.png')]
+            Animation_Stay = [('img/swordHero/heroW1.png',0.1)]
+            Animation_Right = [('img/swordHero/heroR1.png'),
+                               ('img/swordHero/heroR2.png'),
+                               ('img/swordHero/heroR3.png')]
+            Animation_Left = [('img/swordHero/heroL1.png'),
+                              ('img/swordHero/heroL2.png'),
+                              ('img/swordHero/heroL3.png')]
+            Animation_Attack = [('img/swordHero/heroW1.png'),
+                                ('img/swordHero/heroAtt.png')]
 
         #define animation of player; use pyganim
         boltAnim = []
@@ -254,12 +297,13 @@ class Player(sprite.Sprite):
         self.image.fill(BACKGROUND)
         for m in monsters:
             if sprite.collide_rect(self, m) and attack:
-                print('Player hits monster: ', self.power)
-                m.life -= self.power
+                print('Player hits monster: ', self.strength)
+                m.life -= self.strength
                 pygame.time.delay(50)
                 if m.life < 1:
                     m.kill()
-                    pf = Coin(m.rect.x-15, m.rect.y-15, 'img/coin.png')
+                    pf = Coin(m.rect.x-15, m.rect.y-15,
+                              'img/SolidObjects/coin.png')
                     entities.add(pf)
 
         if left:
@@ -320,6 +364,7 @@ def generate_hero(x, y):
     else:
         hero = Player(x1, y1, 2)
     entities.add(hero)
+    hero.anim()
 
 
 def generate():
@@ -335,25 +380,25 @@ def generate():
         for row in f:
             for col in row:
                 if col == '&': # sword
-                    pf = RealObject(x, y, 'img/sword1.png', 'sword')
+                    pf = RealObject(x, y, 'img/RealObjects/sword1.png', 'sword')
                     entities.add(pf)
                 elif col == 'P': # npc
                     pf = NPC(x, y, 'img/npc/npc' + str(level) + '.png')
                     entities.add(pf)
                     platforms.append(pf)
                 elif col == 'S': # bed
-                    pf = Bed(x, y, 'img/bed.png')
+                    pf = Bed(x, y, 'img/SolidObjects/bed.png')
                     entities.add(pf)
                     platforms.append(pf)
                 elif col == '%': # life
-                    pf = LifeBlock(x+10, y+10, 'img/life.png')
+                    pf = LifeBlock(x+10, y+10, 'img/SolidObjects/life.png')
                     entities.add(pf)
                 elif col == '-': # tree
-                    pf = SolidObject(x, y, 'img/tree.png')
+                    pf = SolidObject(x, y, 'img/SolidObjects/tree.png')
                     platforms.append(pf)
                     entities.add(pf)
                 elif col == '/':  # level_up, door to next level
-                    pf = PlatExit(x, y, 'img/exit.png')
+                    pf = PlatExit(x, y, 'img/SolidObjects/exit.png')
                     platforms.append(pf)
                     entities.add(pf)
                     if level_down:
@@ -364,14 +409,14 @@ def generate():
                     # on first level there isn't door on previous
                     # level so we need add 2 trees instead of it
                     if level != 1:
-                        pf = PlatLevelDown(x, y, 'img/exit.png')
+                        pf = PlatLevelDown(x, y, 'img/SolidObjects/exit.png')
                         platforms.append(pf)
                         entities.add(pf)
                     else:
-                        pf = SolidObject(x, y, 'img/tree.png')
+                        pf = SolidObject(x, y, 'img/SolidObjects/tree.png')
                         platforms.append(pf)
                         entities.add(pf)
-                        pf = SolidObject(x, y+50, 'img/tree.png')
+                        pf = SolidObject(x, y+50, 'img/SolidObjects/tree.png')
                         platforms.append(pf)
                         entities.add(pf)
                     if level_up or level == 1:
@@ -379,15 +424,15 @@ def generate():
                         # we spawn near door to previous level
                         generate_hero(x, y)
                 elif col == 'D':  # walls of house
-                    pf = SolidObject(x, y, 'img/wall.png')
+                    pf = SolidObject(x, y, 'img/SolidObjects/wall.png')
                     platforms.append(pf)
                     entities.add(pf)
                 elif col == '#': #water
-                    pf = SolidObject(x, y, 'img/water.png')
+                    pf = SolidObject(x, y, 'img/SolidObjects/water.png')
                     platforms.append(pf)
                     entities.add(pf)
                 elif col == '*': # mobs
-                    pf = Monster(x, y, 'img/monster.png')
+                    pf = Monster(x, y, 'img/monsters/monster.png')
                     monsters.add(pf)
                 x += PLATWIDTH
             y += PLATHEIGHT
@@ -400,7 +445,7 @@ def generate():
 
 generate()
 timer = pygame.time.Clock()
-left = right = up = down = attack = sleep = talk = False
+left = right = up = down = attack = doing = False
 say('advice', 'img/text/text0.gif')
 
 while running:
@@ -415,21 +460,6 @@ while running:
         generate()
     for m in monsters:
         m.move(entities)
-    if Animation_Down[1] != 'img/swordHero/heroW3.png':
-        if smth_in_inventary('sword'):
-            Animation_Down = [('img/swordHero/heroW2.png'),
-                              ('img/swordHero/heroW3.png')]
-            Animation_Stay = [('img/swordHero/heroW1.png',0.1)]
-            Animation_Right = [('img/swordHero/heroR1.png'),
-                               ('img/swordHero/heroR2.png'),
-                               ('img/swordHero/heroR3.png')]
-            Animation_Left = [('img/swordHero/heroL1.png'),
-                              ('img/swordHero/heroL2.png'),
-                              ('img/swordHero/heroL3.png')]
-            Animation_Attack = [('img/swordHero/heroW1.png'),
-                                ('img/swordHero/heroAtt.png')]
-            hero.__init__(hero.rect.x, hero.rect.y, 4)
-
     timer.tick(60)
     hero.update(left, right, up, down, platforms)
     camera_.update(hero)
@@ -439,40 +469,42 @@ while running:
     for m in monsters:
         screen.blit(m.image, camera_.apply(m))
     pygame.display.set_caption('Level ' + str(level) +\
-                            ' life ' + str(life) + ' money ' + str(money))
+                            ' life ' + str(life) + ' money ' + str(money) +\
+                            ' Attributes: strength - ' + str(hero.strength) +\
+                            ', agility - ' + str(hero.agility) + ', luck - ' +\
+                            str(hero.luck) + ', intelligence - ' +\
+                            str(hero.intelligence) )
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = 0
         if not(up or down or right or left or attack):
             if event.type == KEYDOWN:
-                if event.key == K_UP:
+                if event.key == K_UP  or event.key == K_w:
                     up = True
-                elif event.key == K_DOWN:
-                    down = True
-                elif event.key == K_LEFT:
+                elif event.key == K_LEFT or event.key == K_a:
                     left = True
-                elif event.key == K_RIGHT:
+                elif event.key == K_DOWN or event.key == K_s:
+                    down = True
+                elif event.key == K_RIGHT or event.key == K_d:
                     right = True
-                elif event.key == K_a:
+                elif event.key == K_f:
                     attack = True
-                elif event.key == K_s:
-                    sleep = True
-                elif event.key == K_t:
-                    talk = True
+                elif event.key == K_e:
+                    doing = True
                 elif event.key == K_F1:
                     say('Pause', 'img/text/pause.gif')
 
         if event.type == KEYUP:
-            if event.key == K_UP:
+            if event.key == K_UP or event.key == K_w:
                 up = False
-            elif event.key == K_DOWN:
-                down = False
-            elif event.key == K_LEFT:
+            elif event.key == K_LEFT or event.key == K_a:
                 left = False
-            elif event.key == K_RIGHT:
+            elif event.key == K_DOWN or event.key == K_s:
+                down = False
+            elif event.key == K_RIGHT or event.key == K_d:
                 right = False
-            elif event.key == K_a:
+            elif event.key == K_f:
                 attack = False
     pygame.display.flip()
 pygame.display.quit()
