@@ -1,7 +1,7 @@
 # ! - do in right now; P - programming; L - logic
 #P TODO: module solid object, monsters, hero etc
 #P TODO: like tkinter.Tk() but without interruption
-#! TODO: hero's level, XP, hero's name
+#! TODO: hero's name
 #! TODO: basic attributes (strength, fallout system?) and make them better (strength-ups)
 #! TODO: quests!!!!11!1
 #! TODO: door with key, npc sell key; puzzles; button whick opens door(?)
@@ -44,8 +44,6 @@ inventary = []
 level_up = False
 level_down = False
 running = level = 1
-life = 20
-money = 0
 
 
 def say(title, path):
@@ -57,6 +55,35 @@ def say(title, path):
     img = tkinter.PhotoImage(file=path)
     button1 = tkinter.Button(root, image=img, command=root.destroy)
     button1.pack()
+    root.mainloop()
+
+
+def main_attr(hero):
+    def strength(root):
+        hero.strength += 1
+    def agility(root):
+        hero.agility += 1
+    def intelligence(root):
+        hero.intelligence += 1
+    def luck(root):
+        hero.luck += 1
+    root = tkinter.Tk()
+    root.geometry('+500+300')
+    root.title('Choose')
+    label1 = tkinter.Label(root, text='Choose your main attribute')
+    button1 = tkinter.Button(root, text='strength', command=root.destroy)
+    button2 = tkinter.Button(root, text='agility', command=root.destroy)
+    button3 = tkinter.Button(root, text='intelligence', command=root.destroy)
+    button4 = tkinter.Button(root, text='luck', command=root.destroy)
+    label1.pack()
+    button1.pack()
+    button1.bind('<Button-1>',strength)
+    button2.pack()
+    button2.bind('<Button-1>',agility)
+    button3.pack()
+    button3.bind('<Button-1>',intelligence)
+    button4.pack()
+    button4.bind('<Button-1>',luck)
     root.mainloop()
 
 
@@ -108,22 +135,22 @@ class SolidObject(sprite.Sprite):
 """all fixed objects. begin"""
 class LifeBlock(SolidObject):
     def action(self):
-        global life
-        if life < 20:
-            life += 1
+        global hero
+        if hero.life < 20:
+            hero.life += 1
             self.kill()
 
 
 class Coin(SolidObject):
     def action(self):
-        global money
-        money += 10
+        global hero
+        hero.money += 10
         self.kill()
 
 
 class Bed(SolidObject):
     def action(self):
-        global life, doing
+        global hero, doing
         if doing:
             print('sleep...')
             pygame.time.delay(200)
@@ -132,7 +159,7 @@ class Bed(SolidObject):
             screen.blit(imga, imgarect)
             pygame.display.flip()
             pygame.time.delay(4000)
-            life = 20
+            hero.life = 20
             doing = False
 
 
@@ -179,7 +206,7 @@ class Monster(sprite.Sprite):
         self.rect = pygame.rect.Rect(x, y, PLATWIDTH, PLATHEIGHT)
 
     def move(self, entities):
-        global life
+        global hero
         for f in entities:
             if ((sprite.collide_rect(self, f))
                 and isinstance(f, Player) and attack):
@@ -188,7 +215,7 @@ class Monster(sprite.Sprite):
                     pygame.time.delay(50)
                     self.xvel = 0
                     self.yvel = 0
-                    life -= self.strength
+                    hero.life -= self.strength
         self.collide(self.xvel, 0, entities)
         self.rect.x += self.xvel
         self.collide(0, self.yvel, entities)
@@ -219,20 +246,31 @@ class RealObject(sprite.Sprite):
 
 
 class Player(sprite.Sprite):
-    def __init__(self, x, y, strength):
+    def __init__(self, x, y):
         sprite.Sprite.__init__(self)
         self.xvel = 0
         self.yvel = 0
-        self.speed = 4
         selfStartX = x
         selfStartY = y
-        self.strength = strength
-        self.agility = 10
-        self.luck = 6
-        self.intelligence = 5
         self.image = Surface((WIDTH, HEIGHT))
         self.rect = pygame.rect.Rect(x, y, WIDTH, HEIGHT)
         self.image.set_colorkey(BACKGROUND)
+
+    def define(self,strength,agility,intelligence,luck):
+        self.strength = strength
+        self.agility = agility
+        self.intelligence = intelligence
+        self.luck = luck
+        self.speed = 4
+        self.xp = 0
+        self.level = 1
+        self.life = 20
+        self.money = 0
+
+    def hero_level(self):
+        if self.xp >= self.level*20:
+            self.level += 1
+            self.xp = 0
 
     def anim(self):
         Animation_Delay = 0.1
@@ -294,6 +332,7 @@ class Player(sprite.Sprite):
         self.image.fill(BACKGROUND)
 
     def update(self, left, right, up, down, platforms):
+        self.hero_level()
         self.image.fill(BACKGROUND)
         for m in monsters:
             if sprite.collide_rect(self, m) and attack:
@@ -302,6 +341,7 @@ class Player(sprite.Sprite):
                 pygame.time.delay(50)
                 if m.life < 1:
                     m.kill()
+                    self.xp += 10
                     pf = Coin(m.rect.x-15, m.rect.y-15,
                               'img/SolidObjects/coin.png')
                     entities.add(pf)
@@ -359,10 +399,14 @@ def generate_hero(x, y):
     else:
         y1 = y + 10
 
-    if smth_in_inventary('sword'):
-        hero = Player(x1, y1, 4)
+    if level == 1 and level_up:
+        hero = Player(x1, y1)
     else:
-        hero = Player(x1, y1, 2)
+        hero.selfStartX = x1
+        hero.selfStartY = y1
+        hero.xvel = 0
+        hero.yvel = 0
+        hero.rect = pygame.rect.Rect(x1, y1, WIDTH, HEIGHT)
     entities.add(hero)
     hero.anim()
 
@@ -443,10 +487,13 @@ def generate():
     back_image = camera.BackImage(path)
 
 
+level_up = True
 generate()
 timer = pygame.time.Clock()
-left = right = up = down = attack = doing = False
+level_up = left = right = up = down = attack = doing = False
 say('advice', 'img/text/text0.gif')
+hero.define(2,5,5,5)
+main_attr(hero)
 
 while running:
 # right now, while window isn't closed
@@ -454,7 +501,7 @@ while running:
         generate()
         level_up = level_down = False
         print('------------------')
-    if not(life):
+    if not(hero.life):
         say('Dead','img/text/dead.gif')
         level = 2
         generate()
@@ -469,8 +516,10 @@ while running:
     for m in monsters:
         screen.blit(m.image, camera_.apply(m))
     pygame.display.set_caption('Level ' + str(level) +\
-                            ' life ' + str(life) + ' money ' + str(money) +\
-                            ' Attributes: strength - ' + str(hero.strength) +\
+                            ' life ' + str(hero.life) + ' money ' +\
+                            str(hero.money) + ', level: '+ str(hero.level) +\
+                            ', xp: ' + str(hero.xp) +\
+                            ', Attributes: strength - ' + str(hero.strength) +\
                             ', agility - ' + str(hero.agility) + ', luck - ' +\
                             str(hero.luck) + ', intelligence - ' +\
                             str(hero.intelligence) )
