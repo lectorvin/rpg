@@ -6,7 +6,7 @@ my own rpg
 <ul>
 <li>module solid object, monsters, hero etc
 <li>like tkinter.Tk() but without interruption
-<li>hero's level, XP, hero's name
+<li>hero's name
 <li>basic attributes (strength, fallout system?) and make them better (power-ups)
 <li>quests!!!!11!1
 <li>door with key, npc sell key; puzzles; button whick opens door(?)
