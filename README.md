@@ -18,7 +18,6 @@ my own rpg
 <li>battles like normal battles
 <li>random mobs' bites; random hit...
 <li>good dialogs with npc, make your choice
-<li>new program for generating pixel text
 <li>mobs spawner
 <li>use tactics
 <li>make you character by yourself; fallout system?
